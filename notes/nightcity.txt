@@ -1,0 +1,199 @@
+----------------------------
+Reconocimiento de la ip
+----------------------------
+
+uso de la herramienta
+./Auditoria_Reconocimiento_Dispositivos.sh -i eth0
+
+ubicada en mi repositorio Github
+https://github.com/jonathang88/scripts_portfolio/tree/main/detectar_dispositivos
+
+[REDACTED_IP]    | PCS Systemtechnik GmbH         | Desconocido     | 21/tcp,22/tcp,80/tcp | Desconocido 
+
+
+luego de hacer un escaneo de puertos
+
+nmap -Pn --top-ports 200 -sV --version-light -T3 "$TARGET"
+
+resultados
+-------------------------------------------
+21/tcp open  ftp     vsftpd 2.0.8 or later
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.7 (Ubuntu Linux; protocol 2.0)
+80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
+-------------------------------------------
+
+whatweb http://[REDACTED_IP]/index.html
+http://[REDACTED_IP]/index.html [200 OK] Apache[2.4.29], Country[RESERVED][ZZ], HTTPServer[Ubuntu Linux][Apache/2.4.29 (Ubuntu)], IP[[REDACTED_IP]], Title[NightCity Web Server]
+
+
++gobuster dir -u http://[REDACTED_IP] -w [REDACTED].txt -x html,php -k -t 200
++gobuster dir -u http://[REDACTED_IP] -w [REDACTED]-Content/directory-list-2.3-medium.txt  -x html,php -k -t 200  
+
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/images               (Status: 301) [Size: 313] [--> http://[REDACTED_IP]/images/]
+/index.html           (Status: 200) [Size: 8407]
+/gallery.html         (Status: 200) [Size: 8768]
+/contact.html         (Status: 200) [Size: 6349]
+/about.html           (Status: 200) [Size: 7744]
+/js                   (Status: 301) [Size: 309] [--> http://[REDACTED_IP]/js/]
+/secret               (Status: 301) [Size: 313] [--> http://[REDACTED_IP]/secret/]
+/robin                (Status: 200) [Size: 1873]
+/robots.txt           (Status: 200) [Size: 136]
+
+
+
+-----images
+busco con steghide info veryImportant.jpg
+pero no encuentro nada, analizo la imagen very_importan.jpg pero no encuentro la passphrase
+
+
+---inicio ftp
+ftp [REDACTED_IP]  
+con anonymous
+ingreso exitoso
+
+ftp [REDACTED_IP]         
+Connected to [REDACTED_IP].
+220 Welcome to the NightCity Server!!
+Name ([REDACTED_IP]:kali): anonymous
+331 Please specify the password.
+Password: 
+230 Login successful.
+
+
+
+encuentro una archivo reminder.txt
+cat reminder.txt
+Local user is in the coordinates
+
+
+GPS Latitude                    : 26 deg 21' 28.59" N
+GPS Longitude                   : 127 deg 47' 0.99" E
+GPS Position                    : 26 deg 21' 28.59" N, 127 deg 47' 0.99" E
+
+strings some-light.jpg | less
+GothamCity
+
+
+Exif
+http://ns.adobe.com/xap/1.0/
+<?xpacket begin='
+' id='W5M0MpCehiHzreSzNTczkc9d'?>
+<x:xmpmeta xmlns:x='adobe:ns:meta/' x:xmptk='Image::ExifTool 12.41'>
+<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
+ <rdf:Description rdf:about=''
+  xmlns:dc='http://purl.org/dc/elements/1.1/'>
+  <dc:description>
+   <rdf:Alt>
+    <rdf:li xml:lang='x-default'>26
+21&#39;28.59&quot;N,127
+47&#39;0.99&quot;E</rdf:li>
+   </rdf:Alt>
+  </dc:description>
+ </rdf:Description>
+ <rdf:Description rdf:about=''
+  xmlns:pdf='http://ns.adobe.com/pdf/1.3/'>
+  <pdf:Author>GothamCity</pdf:Author>
+ </rdf:Description>
+</rdf:RDF>
+</x:xmpmeta>
+
+en robin busco los personajer que dicen
+ruce Wayne
+Dick Grayson
+Damian Wayne
+Talia al Ghul
+Tim Drake
+Profesor Pyg
+Jason Todd
+Capucha Roja (alias de Jason Todd)
+
+-----
+busco en robots.txt
+
+http://[REDACTED_IP]/robots.txt
+
+#Good Job
+
+To continue, you need a workmate. Our lastest news is that Robin is close to
+NightCity. Try to find him, Robin has the key!!
+
+analizamos las tres fotos con la coordinadas que dan en Okinawa japon
+probamos en ingles primero pero al ver el texto de /robin en español
+probamos:
+
+steghide extract -sf most-wanted.jpg -p "japon"
+
+steghide extract -sf most-wanted.jpg -p "japon"
+wrote extracted data to "pass.txt".
+
+
+al ver el == al final puede ser un base64
+echo "[REDACTED]==" | base64 -d
+primera flag
+password: [REDACTED]
+
+en ssh
+pruebo robin y batman
+
+cd
+
+descargue la imagen iknowyou.jpg
+
+por ftp veo 3 usuarios
+administrator   anonymous       batman
+
+
+pruebo diferentes calves contra la imagen pero no da resultado ni tecnicas de Esteganografía
+
+con GIMP 
+le quito las sombras y logro ver un mensaje
+
+[REDACTED]
+
+por sftp conectado como batman
+descargo a mi equipo passwd
+
+luego veo los usuarios con home
+administrator
+joker
+batman
+anonymous
+
+
+prueba esta contraseña con estos usuarios
+
+y lo consigo con joker
+kali㉿kali)-[~/Pictures]
+└─$ sftp joker@[REDACTED_IP]
+joker@[REDACTED_IP]'s password: 
+Connected to [REDACTED_IP].
+sftp> 
+
+joker@NightCity:/home$ ls -la
+total 24
+drwxr-xr-x  6 root          root          4096 jun  9  2022 .
+drwxr-xr-x 24 root          root          4096 oct 15 21:38 ..
+drwxrwx--- 15 administrator administrator 4096 jun  9  2022 administrator
+drwxr-xr-x  3 root          root          4096 jun  9  2022 anonymous
+drwxr-xr-x  5 batman        batman        4096 oct 16 00:50 batman
+drwxrwx---  2 joker         joker         4096 jun 13  2022 .joker
+
+se llama .joker
+
+
+flag.txt
+Good job!! You just discovered the criminal!
+
+
+
+
+
+
+
+
+
+
+
